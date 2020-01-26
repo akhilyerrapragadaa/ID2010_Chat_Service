@@ -15,25 +15,33 @@ package chat.server;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.IOException;
-import java.io.Serializable;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
-
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.text.DecimalFormat;
+import java.util.Calendar;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.Set;
 import java.util.Vector;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+
+//Jini
+
+import net.jini.core.entry.Entry;
+import net.jini.core.event.RemoteEventListener;
+import net.jini.core.event.UnknownEventException;
+
+import net.jini.core.lookup.ServiceID;
+
+import net.jini.lookup.JoinManager;
+import net.jini.lookup.ServiceIDListener;
+
+import net.jini.lookup.entry.Name;
 
 // Jini
 
@@ -61,6 +69,8 @@ public class ChatServer
     ChatServerInterface,	// for clients
     Runnable			// for the distribution thread.
 {
+        protected HashMap<RemoteEventListener,Byte> userBytes = new HashMap<RemoteEventListener,Byte>();
+        protected HashMap<RemoteEventListener,Calendar> userLoggednfo= new HashMap<RemoteEventListener,Calendar>();
         protected String text;
         protected String InName;
 	protected List<String> usernames = new ArrayList<String>();
@@ -201,6 +211,7 @@ public class ChatServer
   protected void addClient (RemoteEventListener rel) {
     synchronized (clients) {
       clients.add (rel);
+      userLoggednfo.put(rel,Calendar.getInstance());
     }
     System.out.println ("Added client : " + rel.toString ());
   }
@@ -210,23 +221,42 @@ public class ChatServer
    * connected to this ChatServer instance.
    * @param rel  The RemoteEventListener implementation to remove.
    */
-  protected void removeClient (RemoteEventListener rel) {
-    synchronized (clients) {
-      clients.remove (rel);
-    }
-    System.out.println ("Removed client : " + rel.toString ());
-  }
+  protected void removeClient(RemoteEventListener rel) {
+		Calendar savedTime;
+		synchronized (clients) {
+			 savedTime = userLoggednfo.get(rel);
+			clients.remove(rel);	
+			userLoggednfo.remove(rel);
+		
+		System.out.println("Removed client : " + rel.toString());
+		System.out.println("Session Info-----LoggedIn time: "+savedTime.getTime()+" Loggedout Time---- "+Calendar.getInstance().getTime());
+		System.out.println("Session lasted "+ TimeUnit.MILLISECONDS.toMinutes((savedTime.getTimeInMillis()-Calendar.getInstance().getTimeInMillis()))+" minutes");
+		DecimalFormat _numberFormat= new DecimalFormat("#0.0000");		
+		float kbData = ((float)userBytes.get(rel)/1024);
+		System.out.println("Total chat Kbytes/Bytes sent by the user "+ _numberFormat.format(kbData)+"/"+userBytes.get(rel));
+		}
+	}
 
   /* *** Interface ChatServerInterface *** */
 
   @Override
-  public void say (String msg) throws RemoteException
-  {
-    if (msg != null) {
-      addMessage (msg);
-    }
-  }
-
+  public void say(String msg, RemoteEventListener rel) throws RemoteException {
+	 byte sum = 0;
+		if (msg != null) {
+			byte[] incoming = msg.getBytes();
+			for(long a :incoming) {
+				sum+=a;
+			}
+			if(userBytes.containsKey(rel)) {
+			long saved = userBytes.get(rel);
+			userBytes.put(rel,(byte) (saved+sum));		
+			}
+			else {
+				userBytes.put(rel,sum);	
+			}	
+			addMessage(msg);
+		}
+	}
   @Override
   public String getName () throws RemoteException {
     return serverName;
@@ -332,6 +362,7 @@ public void displayActive() {
 public void addActiveUsers(String name){
 	InName = name + " is online now";
 	usernames.add(name);
+        System.out.println(name+" connected to the chat");
 	displayActive();
 	    	  
 	    	  
@@ -340,6 +371,7 @@ public void addActiveUsers(String name){
 public void removeDummyUser(String name) {
 	InName = name + " is offline now";
 	usernames.remove(name);
+        System.out.println(name+" disconnected from the chat");
 	displayActive();
 }
   
@@ -351,6 +383,7 @@ public void swapUserName(String newName, String oldName) {
 	InName = oldName + " changed to "+newName;
 	usernames.remove(oldName);
 	usernames.add(newName);
+        System.out.println(InName);
 	displayActive();
 	
 }

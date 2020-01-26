@@ -288,25 +288,25 @@ public class ChatClient
    * communication.
    * @param server The chat server to disconnect from.
    */
-  public void disconnect (ChatServerInterface server)
-  {
-    if (server != null) {
-      try {
-	String serverName = server.getName ();
-	server.unregister (this);
+  public void disconnect(ChatServerInterface server) {
+		if (server != null) {
+			try {
+				String serverName = server.getName();
+				
 ///////////////////////////////////
-try {
-removeUserName(myServer);
-} catch (RemoteException e) {
+				try {
+					removeUserName(myServer);
+				} catch (RemoteException e) {
 // TODO Auto-generated catch block
-e.printStackTrace();
-}
+					e.printStackTrace();
+				}
+				server.unregister(this);
 ////////////////////////////////////
-	System.out.println ("[Disconnected from " + serverName + "]");
-      }
-      catch (RemoteException rex) {}
-    }
-  }
+				System.out.println("[Disconnected from " + serverName + "]");
+			} catch (RemoteException rex) {
+			}
+		}
+	}
 
   /**
    * This method implements the '.disconnect' user command.
@@ -480,7 +480,7 @@ e.printStackTrace();
   public void sendToChat(String text) throws RemoteException {
 		if (myServer != null) {
 			try {
-				myServer.say(text);
+				myServer.say(text, this);
 				/// ...................///
 				heartBeat(awayTime);
 				/// ...................///

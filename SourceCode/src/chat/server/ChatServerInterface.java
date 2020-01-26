@@ -27,8 +27,9 @@ public interface ChatServerInterface
    * distributed to registered ChatClientNotificationInterfaces.
    * @param msg The message.
    */
-  public void say (String msg)
-    throws java.rmi.RemoteException;
+ 	//----------------------//
+public void say (String msg, RemoteEventListener rel)
+ throws java.rmi.RemoteException;
 
   /**
    * Returns the server's user-friendly name.
