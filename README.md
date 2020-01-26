@@ -1,5 +1,5 @@
 # ID2010_Programming_Interactive_Systems_Assignment1
-The requirement is to implement Away From Keyboard(AFK) and user status.
+The requirement is to implement Away From Keyboard(AFK) and user status. Below is the detailed information.
 
 1) An AFK (Away From Keyboard) detector that automatically notifies the other clients when someone has been inactive for a certain period of time. The message should be automatically generated when the timeout period expires. 
 Add a command in the client for turning on and off the display of such automated messages.
